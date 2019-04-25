@@ -92,7 +92,7 @@ if __name__ == "__main__":
 	client = mqtt.Mqtt(config)
 	client.connect()
 	#only this devices can be controlled from MQTT
-	client.subscribe("relay", "+", "set")
+	client.subscribe("mqttrelay", "+", "set")
 	
 	boards = init_relays(config)
 
