@@ -60,8 +60,6 @@ class EightChanRelay:
             msg = 'R' + str((rl.ind))
             response = self.send(msg.encode())
 
-            print(response)
-
             if str(response).find("off") != -1:
                 rl.status = 0
             else:
