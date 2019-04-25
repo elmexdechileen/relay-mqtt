@@ -81,7 +81,7 @@ def process_mqtt_messages(client):
 
 			client._queue.task_done()
 		except Exception as e:
-			_LOGGER.error('Error while sending from mqtt to gateway: ', str(e))
+			_LOGGER.error('Error while sending from mqtt to relay board: ', str(e))
 
 if __name__ == "__main__":
 	_LOGGER.info("Loading config file...")

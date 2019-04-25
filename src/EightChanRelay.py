@@ -49,6 +49,8 @@ class EightChanRelay:
 
             response = self.send(msg.encode())
             self.disconnect()
+        else:
+            raise Exception("Cannot connect to relay board")
 
     def updateStatus(self):
         if self.connect():
