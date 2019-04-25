@@ -76,8 +76,15 @@ def process_mqtt_messages(client):
 				if brd.name != board:
 					continue
 				brd.processUpdate(value, relay)
-				#processNow = True
-				#process_relay_states(client)
+
+				if value == "on":
+					st = 1
+				else:
+					st = 0
+
+				data = {'status': str(st)}
+				client.publish(board.name, "r" + str(relay), str(data))
+
 			client._queue.task_done()
 		except Exception as e:
 			_LOGGER.error('Error while sending from mqtt to relay board: ', str(e))
