@@ -11,12 +11,13 @@ import yamlparser
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
-QUERY_TIME = 60
+QUERY_TIME = 300
 
 processNow = False
 
 def init_relays(config):
 	boards = []
+	update = False
 
 	if config is None:
 		raise Exception("Config is None.")
@@ -49,9 +50,11 @@ def wait():
 		time.sleep(QUERY_TIME/10)
 
 def process_relay_states(client):
-	global boards
+	global boards, update
 	while True:
+		update = False
 		wait()
+		update = True
 		try:
 			for board in boards:
 				board.updateStatus()
@@ -62,7 +65,7 @@ def process_relay_states(client):
 			_LOGGER.error('Error while sending from gateway to mqtt: ', str(e))
 
 def process_mqtt_messages(client):
-	global processNow, boards
+	global processNow, boards, update
 	while True:
 		try: 
 			data = client._queue.get()
@@ -77,13 +80,14 @@ def process_mqtt_messages(client):
 					continue
 				brd.processUpdate(value, relay)
 
-				if value == "on":
-					st = 1
-				else:
-					st = 0
+				if update == False:
+					if value == "on":
+						st = 1
+					else:
+						st = 0
 
-				data = {'status': str(st)}
-				client.publish(brd.name, "r" + str(relay), str(data))
+					data = {'status': str(st)}
+					client.publish(brd.name, "r" + str(relay), str(data))
 
 			client._queue.task_done()
 		except Exception as e:
