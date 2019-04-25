@@ -11,7 +11,7 @@ import yamlparser
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
-QUERY_TIME = 60
+QUERY_TIME = 2
 
 processNow = False
 
@@ -76,9 +76,8 @@ def process_mqtt_messages(client):
 				if brd.name != board:
 					continue
 				brd.processUpdate(value, relay)
-				process_relay_states(client)
 				processNow = True
-
+				process_relay_states(client)
 			client._queue.task_done()
 		except Exception as e:
 			_LOGGER.error('Error while sending from mqtt to relay board: ', str(e))
