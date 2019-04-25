@@ -59,7 +59,12 @@ def process_relay_states(client):
 			for board in boards:
 				board.updateStatus()
 				for rl in board.relays:
-					data = {'status': rl.status}
+					if rl.status == 1:
+						st = "on"
+					else:
+						st = "off"
+
+					data = {'status': st}
 					client.publish(board.name, rl.name, str(data))
 		except Exception as e:
 			_LOGGER.error('Error while sending from gateway to mqtt: ', str(e))
@@ -81,12 +86,7 @@ def process_mqtt_messages(client):
 				brd.processUpdate(value, relay)
 
 				if update == False:
-					if value == "on":
-						st = 1
-					else:
-						st = 0
-
-					data = {'status': str(st)}
+					data = {'status': value}
 					client.publish(brd.name, "r" + str(relay), str(data))
 
 			client._queue.task_done()
