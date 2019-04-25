@@ -1,7 +1,7 @@
-yeelight:
+relaylight:
   build: .
   dockerfile: Dockerfile-i386
-  container_name: yeelight
+  container_name: relaylight
   volumes:
     - "./config:/app/config"
   restart: always

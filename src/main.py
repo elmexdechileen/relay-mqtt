@@ -3,8 +3,7 @@ import time
 import threading
 import os
 import json
-import pyyeelight
-from lightbulbstate import LightBulbState
+import EightChanRelay as rel
 
 #mine
 import mqtt
@@ -14,33 +13,32 @@ logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 QUERY_TIME = 2
 
-bulbs=[]
 processNow = False
 
-def init_lamps(config):
-	if config is None:
-		raise "Config is None."
-	sids = config.get("sids", "None")
-	if sids is None:
-		raise "Config -> sids is None."
+def init_relays(config):
+	boards = []
 
-	lamps=[]
-	# sid is IP-address
-	for sid in sids:
-		if (sid is None):
+	if config is None:
+		raise Exception("Config is None.")
+	relays = config.get("relays", "None")
+	if relays is None:
+		raise Exception("Config -> relays is None.")
+
+	for relay in relays:
+		if (relay is None):
 			continue
 		try:
-			data = sids[sid]
-			yeelight = pyyeelight.YeelightBulb(sid)
-			name = data.get("name", sid)
-			model = data.get("model", "light")
-			yeelight.__name__ = name #add name
-			bulb = LightBulbState(sid, model, yeelight)
-			bulb.update_properties()
-			lamps.append(bulb)
+			rl = rel.EightChanRelay(
+				hostname=relay,
+				port=relays.get(relay).get("port", "None"),
+				NumberOfRelays=relays.get(relay).get("numberrelays", "None"),
+				id=relays.get(relay).get("name", "None"),
+			)
+
+			boards.append(rl)
 		except Exception as e:
-			_LOGGER.error('Connection to ', str(sid) , ' error:', str(e))
-	return lamps
+			_LOGGER.error('Connection to ', str(relay) , ' error:', str(e))
+	return boards
 
 def wait():
 	global processNow
@@ -50,39 +48,37 @@ def wait():
 			break
 		time.sleep(QUERY_TIME/10)
 
-def process_lamp_states(client):
-	global bulbs
+def process_relay_states(client):
+	global boards
 	while True:
-		wait();
+		wait()
 		try:
-			for bulb in bulbs:
-				hashold = bulb.hash()
-				bulb.update_properties(force=True)
-				hashnew = bulb.hash()
-				# _LOGGER.debug(str(bulb.name) + " ===> " + hashold + "-" + hashnew)
-
-				if (hashold != hashnew):
-					_LOGGER.info("!!!! " + bulb.name + ":" + hashold + "->" + hashnew)
-					data = {'status':bulb.status, 'ct':bulb.color_temperature, 'bright':bulb.bright, 'rgb':bulb.rgb}
-					client.publish(bulb.model, bulb.name, data)
+			for board in boards:
+				board.updateStatus()
+				for rl in board.relays:
+					data = {'status': rl.status}
+					client.publish(board.name, rl.name, str(data))
 		except Exception as e:
 			_LOGGER.error('Error while sending from gateway to mqtt: ', str(e))
 
 def process_mqtt_messages(client):
-	global processNow, bulbs
+	global processNow, boards
 	while True:
 		try: 
 			data = client._queue.get()
 			_LOGGER.debug("data from mqtt: " + format(data))
 
-			sid = data.get("sid", None)
-			param = data.get("param", None)
+			board = data.get("board", None)
+			relay = data.get("relay", None)
 			value = data.get("value", None)
-			for bulb in bulbs:
-				if (bulb.ip != sid):
-					continue
-				bulb.process_command(param, value)
-				processNow=True
+
+			for brd in boards:
+				if brd.name != board:
+					for rl in brd.relays:
+						if (rl.name != relay):
+							continue
+				brd.processUpdate(value)
+				processNow = True
 
 			client._queue.task_done()
 		except Exception as e:
@@ -90,17 +86,17 @@ def process_mqtt_messages(client):
 
 if __name__ == "__main__":
 	_LOGGER.info("Loading config file...")
-	config=yamlparser.load_yaml('config/config.yaml')
-
+	#config=yamlparser.load_yaml('config/config.yaml')
+	config = yamlparser.load_yaml('config.yaml')
 	_LOGGER.info("Init mqtt client.")
 	client = mqtt.Mqtt(config)
 	client.connect()
 	#only this devices can be controlled from MQTT
-	client.subscribe("light", "+", "+", "set")
+	client.subscribe("relay", "+", "set")
 	
-	bulbs = init_lamps(config)
+	boards = init_relays(config)
 
-	t1 = threading.Thread(target=process_lamp_states, args=[client])
+	t1 = threading.Thread(target=process_relay_states, args=[client])
 	t1.daemon = True
 	t1.start()
 

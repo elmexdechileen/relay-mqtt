@@ -20,7 +20,7 @@ class Mqtt:
 
 	def __init__(self, config):
 		if (config == None):
-			raise "Config is null"
+			raise Exception("Config is null")
 
 		#load sids dictionary
 		self._sids = config.get("sids", None)
@@ -30,7 +30,7 @@ class Mqtt:
 		#load mqtt settings
 		mqttConfig = config.get("mqtt", None)
 		if (mqttConfig == None):
-			raise "Config mqtt section is null"
+			raise Exception("Config mqtt section is null")
 
 		self.username = mqttConfig.get("username", "")
 		self.password = mqttConfig.get("password", "")
@@ -54,36 +54,17 @@ class Mqtt:
 		t1.start()
 		self._threads.append(t1)
 
-	def subscribe(self, model="+", name="+", prop="+", command="set"):
-		topic = self.prefix + "/" + model + "/" + name + "/" + prop + "/" + command
+	def subscribe(self, relay="+", board="+", command="set"):
+		topic = self.prefix + "/" + relay + "/" + board + "/" + command
 		_LOGGER.info("Subscibing to " + topic + ".")
 		self._client.subscribe(topic)
 
-	def publish(self, model, sid, data, retain=True):
-		sidprops = self._sids.get(sid, None)
-		if (sidprops != None):
-			model = sidprops.get("model",model)
-			sid = sidprops.get("name",sid)
+	def publish(self, board, relay, data, retain=True):
+		PATH_FMT = self.prefix + "/{board}/{relay}"
 
-		# _LOGGER.info("data is " + format(data))
-		PATH_FMT = self.prefix + "/{model}/{sid}/{prop}"
-		for key, value in data.items():
-			# fix for latest motion value
-			if (model == "motion" and key == "no_motion"):
-				key="status"
-				value="no_motion"
-			
-			# fix for rgb format
-			# if (key == "rgb" and self._is_int(value)):
-			# 	intval = int(value)
-			# 	blue =  (intval) & 255
-			# 	green = (intval >> 8) & 255
-			# 	red =  (intval >> 16) & 255
-			# 	value = str(red)+","+str(green)+","+str(blue)
-
-			topic = PATH_FMT.format(model=model, sid=sid, prop=key)
-			_LOGGER.info("Publishing message to topic " + topic + ": " + str(value) + ".")
-			self._client.publish(topic, payload=value, qos=0, retain=retain)
+		topic = PATH_FMT.format(board=board, relay=relay)
+		_LOGGER.info("Publishing message to topic " + topic + ".")
+		self._client.publish(topic, payload=data, qos=0, retain=retain)
 
 	def _mqtt_on_connect(self, client, userdata, rc, unk):
 		_LOGGER.info("Connected to mqtt server.")
@@ -93,40 +74,14 @@ class Mqtt:
 		parts = msg.topic.split("/")
 		if (len(parts) != 5):
 			return
-		model = parts[1]
-		query_sid = parts[2] #sid or name part
-		param = parts[3] #param part
+		board = parts[1]
+		relay = parts[2] #sid or name part
+
 		value = (msg.payload).decode('utf-8')
 		if self._is_int(value):
 			value = int(value)
-		name = "" # we will find it next
-		sid = query_sid
 
-		for current_sid in self._sids:
-			if (current_sid == None):
-				continue
-			sidprops = self._sids.get(current_sid, None)
-			if sidprops == None:
-				continue
-			sidname = sidprops.get("name", current_sid)
-			sidmodel = sidprops.get("model", "")
-			if (sidname == query_sid and sidmodel == model):
-				sid = current_sid
-				name = sidname
-				break
-			else:
-				_LOGGER.debug(sidmodel + "-" + sidname + " is not " + model + "-" + query_sid + ".")
-				continue
-
-		# fix for rgb format
-		if (param == "rgb" and "," in str(value)):
-			arr = value.split(",")
-			r = int(arr[0])
-			g = int(arr[1])
-			b = int(arr[2])
-			value = int('%02x%02x%02x%02x' % (255, r, g, b), 16)
-
-		data = {'sid': sid, 'model': model, 'name': name, 'param':param, 'value':value}
+		data = {'board': board, 'relay': relay, 'value':value}
 		# put in process queuee
 		self._queue.put(data)
 
