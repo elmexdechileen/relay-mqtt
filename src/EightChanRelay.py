@@ -53,16 +53,20 @@ class EightChanRelay:
             self.relays[(index - 1)].status = 0
 
         response = self.send(msg.encode())
+        self.disconnect()
 
     def updateStatus(self):
         for rl in self.relays:
             msg = 'R' + str((rl.ind))
             response = self.send(msg.encode())
 
-            if str(response).find("on") != -1:
-                rl.status = 1
+            print(response)
+
+            if str(response).find("off") != -1:
+                rl.status = 0
             else:
-                rl.status = 2
+                rl.status = 1
+        self.disconnect()
 
 class Relay:
     def __init__(self, index, name):
