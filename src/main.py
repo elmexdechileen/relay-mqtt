@@ -83,7 +83,7 @@ def process_mqtt_messages(client):
 					st = 0
 
 				data = {'status': str(st)}
-				client.publish(board.name, "r" + str(relay), str(data))
+				client.publish(brd.name, "r" + str(relay), str(data))
 
 			client._queue.task_done()
 		except Exception as e:
