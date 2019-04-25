@@ -56,7 +56,7 @@ class EightChanRelay:
 
     def updateStatus(self):
         for rl in self.relays:
-            msg = 'R' + str(rl.ind)
+            msg = 'R' + str((rl.ind - 1))
             response = self.send(msg.encode())
 
             if str(response).find("off") != -1:
