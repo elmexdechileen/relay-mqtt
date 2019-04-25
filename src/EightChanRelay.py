@@ -56,13 +56,13 @@ class EightChanRelay:
 
     def updateStatus(self):
         for rl in self.relays:
-            msg = 'R' + str((rl.ind - 1))
+            msg = 'R' + str((rl.ind))
             response = self.send(msg.encode())
 
-            if str(response).find("off") != -1:
-                rl.status = 0
-            else:
+            if str(response).find("on") != -1:
                 rl.status = 1
+            else:
+                rl.status = 2
 
 class Relay:
     def __init__(self, index, name):
