@@ -74,13 +74,12 @@ def process_mqtt_messages(client):
 
 			for brd in boards:
 				if brd.name != board:
-					for rl in brd.relays:
-						if (rl.name != relay):
-							continue
-				brd.processUpdate(value)
+					continue
+				brd.processUpdate(value, relay)
 				processNow = True
 
 			client._queue.task_done()
+			process_relay_states(client)
 		except Exception as e:
 			_LOGGER.error('Error while sending from mqtt to gateway: ', str(e))
 
@@ -92,7 +91,7 @@ if __name__ == "__main__":
 	client = mqtt.Mqtt(config)
 	client.connect()
 	#only this devices can be controlled from MQTT
-	client.subscribe("mqttrelay", "+", "set")
+	client.subscribe("+", "+", "set")
 	
 	boards = init_relays(config)
 
@@ -105,4 +104,4 @@ if __name__ == "__main__":
 	t2.start()
 
 	while True:
-		time.sleep(10)
+		time.sleep(60)

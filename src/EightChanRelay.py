@@ -32,13 +32,13 @@ class EightChanRelay:
         self.s.send(msg)
         return self.s.recv(self.buffersize)
 
-    def processUpdate(self, index, on):
+    def processUpdate(self, value, index):
         '''Check if index is ok'''
-        if (index > self.NumberOfRelays):
+        if index > self.NumberOfRelays:
             raise Exception("Invalid index number, maximum of " + str(self.NumberOfRelays) + " relays.")
 
         if self.connect():
-            if (on):
+            if value == "on":
                 msg = "L" + str(index)
                 self.relays[index].status = 1
             else:

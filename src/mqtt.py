@@ -54,8 +54,8 @@ class Mqtt:
 		t1.start()
 		self._threads.append(t1)
 
-	def subscribe(self, relay="+", board="+", command="set"):
-		topic = self.prefix + "/" + relay + "/" + board + "/" + command
+	def subscribe(self, board="+", relay="+", command="set"):
+		topic = self.prefix + "/" + board + "/" + relay + "/" + command
 		_LOGGER.info("Subscibing to " + topic + ".")
 		self._client.subscribe(topic)
 
@@ -72,10 +72,15 @@ class Mqtt:
 	def _mqtt_process_message(self, client, userdata, msg):
 		_LOGGER.info("Processing message in " + str(msg.topic) + ": " + str(msg.payload) + ".")
 		parts = msg.topic.split("/")
-		if (len(parts) != 5):
+		if (len(parts) != 4):
 			return
 		board = parts[1]
 		relay = parts[2] #sid or name part
+
+		try:
+			relay = int(relay[-1:])
+		except:
+			relay = 1
 
 		value = (msg.payload).decode('utf-8')
 		if self._is_int(value):
