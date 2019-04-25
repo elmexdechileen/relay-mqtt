@@ -23,6 +23,7 @@ class EightChanRelay:
             self.s.connect((self.hostname, self.port))
             return(1)
         except:
+            print("Connection failed")
             return(0)
 
     def disconnect(self):
@@ -38,6 +39,7 @@ class EightChanRelay:
             raise Exception("Invalid index number, maximum of " + str(self.NumberOfRelays) + " relays.")
 
         if self.connect():
+            print("Sending command to relay")
             if value == "on":
                 msg = "L" + str(index)
                 self.relays[(index - 1)].status = 1
