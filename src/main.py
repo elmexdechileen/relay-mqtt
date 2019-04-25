@@ -11,7 +11,7 @@ import yamlparser
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
-QUERY_TIME = 2
+QUERY_TIME = 60
 
 processNow = False
 

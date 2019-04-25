@@ -30,41 +30,39 @@ class EightChanRelay:
         self.s.close()
 
     def send(self, msg):
-        self.s.send(msg)
-        return self.s.recv(self.buffersize)
+        try:
+            self.s.send(msg)
+            return self.s.recv(self.buffersize)
+        except:
+            if self.connect():
+                self.s.send(msg)
+                return self.s.recv(self.buffersize)
+            else:
+                raise Exception("Cannot connect to relay board.")
 
     def processUpdate(self, value, index):
         '''Check if index is ok'''
         if index > self.NumberOfRelays:
             raise Exception("Invalid index number, maximum of " + str(self.NumberOfRelays) + " relays.")
 
-        if self.connect():
-            print("Sending command to relay")
-            if value == "on":
-                msg = "L" + str(index)
-                self.relays[(index - 1)].status = 1
-            else:
-                msg = "D" + str(index)
-                self.relays[(index - 1)].status = 0
-
-            response = self.send(msg.encode())
-            self.disconnect()
+        if value == "on":
+            msg = "L" + str(index)
+            self.relays[(index - 1)].status = 1
         else:
-            raise Exception("Cannot connect to relay board")
+            msg = "D" + str(index)
+            self.relays[(index - 1)].status = 0
+
+        response = self.send(msg.encode())
 
     def updateStatus(self):
-        if self.connect():
-            for rl in self.relays:
-                msg = 'R' + str(rl.ind)
-                response = self.send(msg.encode())
+        for rl in self.relays:
+            msg = 'R' + str(rl.ind)
+            response = self.send(msg.encode())
 
-                if str(response).find("off") != -1:
-                    rl.status = 0
-                else:
-                    rl.status = 1
-            self.disconnect()
-        else:
-            print("Cannot connect")
+            if str(response).find("off") != -1:
+                rl.status = 0
+            else:
+                rl.status = 1
 
 class Relay:
     def __init__(self, index, name):
