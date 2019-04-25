@@ -5,8 +5,8 @@ class EightChanRelay:
     def __init__(self, hostname, port, NumberOfRelays, id):
         ''''init '''
         self.hostname = hostname
-        self.port = port
-        self.NumberOfRelays = NumberOfRelays
+        self.port = int(port)
+        self.NumberOfRelays = int(NumberOfRelays)
         self.name = id
         self.buffersize = 512
         self.relays = []
