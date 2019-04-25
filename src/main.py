@@ -11,7 +11,7 @@ import yamlparser
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
-QUERY_TIME = 2
+QUERY_TIME = 60
 
 processNow = False
 
@@ -104,4 +104,4 @@ if __name__ == "__main__":
 	t2.start()
 
 	while True:
-		time.sleep(60)
+		time.sleep(10)

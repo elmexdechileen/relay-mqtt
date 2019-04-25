@@ -40,10 +40,10 @@ class EightChanRelay:
         if self.connect():
             if value == "on":
                 msg = "L" + str(index)
-                self.relays[index].status = 1
+                self.relays[(index - 1)].status = 1
             else:
                 msg = "D" + str(index)
-                self.relays[index].status = 0
+                self.relays[(index - 1)].status = 0
 
             response = self.send(msg.encode())
             self.disconnect()
