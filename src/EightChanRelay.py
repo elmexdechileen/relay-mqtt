@@ -19,6 +19,7 @@ class EightChanRelay:
     def connect(self):
         '''connect'''
         try:
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.connect((self.hostname, self.port))
             return(1)
         except:
